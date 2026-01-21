@@ -1,0 +1,7 @@
+messages:
+  # true = pozwala używać MiniMessage w wiadomościach, ale legacy (&) nadal działa (tryb hybrydowy).
+  useMiniMessage: true
+
+# Przykłady:
+# - MiniMessage: <gradient:#ff7a18:#af002d>Klany</gradient>
+# - Legacy: &aZielona wiadomość

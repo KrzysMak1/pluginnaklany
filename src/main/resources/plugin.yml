@@ -1,0 +1,11 @@
+name: GetClan
+version: 2.0.6
+main: dev.gether.getclan.GetClan
+api-version: '1.21'
+load: POSTWORLD
+depend: [Vault]
+softdepend: [PlaceholderAPI]
+commands:
+  getclan:
+    description: Clan commands
+    usage: /getclan
