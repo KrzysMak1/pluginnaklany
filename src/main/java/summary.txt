@@ -1,0 +1,41 @@
+Summary for /storage/emulated/0/Documents/jadec/sources/getclan-206jar-aef21916/jar-files/0.jar
+Decompiled with CFR 0.152
+
+
+dev.gether.getclan.placeholder.ClanPlaceholder
+----------------------------
+
+onRequest(org.bukkit.OfflinePlayer java.lang.String )
+  Exception : ob.f0$e
+
+
+dev.gether.getconfig.dataformat.yaml.UTF8Reader
+----------------------------
+
+read(char[] int int )
+  Unable to fully structure code
+
+
+dev.gether.getconfig.dataformat.yaml.UTF8Writer
+----------------------------
+
+write(char[] int int )
+  Unable to fully structure code
+write(java.lang.String int int )
+  Unable to fully structure code
+
+
+dev.gether.getconfig.jackson.databind.type.TypeFactory
+----------------------------
+
+constructSpecializedType(dev.gether.getconfig.jackson.databind.JavaType java.lang.Class<?> boolean )
+  Unable to fully structure code
+
+
+dev.gether.getconfig.jackson.core.io.UTF8Writer
+----------------------------
+
+write(char[] int int )
+  Unable to fully structure code
+write(java.lang.String int int )
+  Unable to fully structure code
