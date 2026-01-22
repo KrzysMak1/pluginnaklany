@@ -9,3 +9,8 @@ commands:
   getclan:
     description: Clan commands
     usage: /getclan
+    aliases: [clan, klan]
+  getplayer:
+    description: Player info command
+    usage: /getplayer
+    aliases: [player, gracz]
