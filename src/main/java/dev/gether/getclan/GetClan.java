@@ -21,25 +21,12 @@
 package dev.gether.getclan;
 
 import dev.gether.getclan.bstats.Metrics;
-import dev.gether.getclan.cmd.ClanENCommand;
-import dev.gether.getclan.cmd.ClanPLCommand;
-import dev.gether.getclan.cmd.PlayerENCommand;
-import dev.gether.getclan.cmd.PlayerPLCommand;
-import dev.gether.getclan.cmd.argument.ClanTagArgument;
-import dev.gether.getclan.cmd.argument.OwnerArgument;
-import dev.gether.getclan.cmd.argument.UserArgument;
-import dev.gether.getclan.cmd.context.DeputyOwnerContextual;
-import dev.gether.getclan.cmd.context.MemberContextual;
-import dev.gether.getclan.cmd.context.OwnerContextual;
-import dev.gether.getclan.cmd.context.domain.DeputyOwner;
-import dev.gether.getclan.cmd.context.domain.Member;
-import dev.gether.getclan.cmd.context.domain.Owner;
+import dev.gether.getclan.cmd.GetClanCommandExecutor;
+import dev.gether.getclan.cmd.GetPlayerCommandExecutor;
 import dev.gether.getclan.config.FileManager;
-import dev.gether.getclan.config.domain.LangType;
 import dev.gether.getclan.core.CooldownManager;
 import dev.gether.getclan.core.alliance.AllianceManager;
 import dev.gether.getclan.core.alliance.AllianceService;
-import dev.gether.getclan.core.clan.Clan;
 import dev.gether.getclan.core.clan.ClanManager;
 import dev.gether.getclan.core.clan.ClanService;
 import dev.gether.getclan.core.upgrade.UpgradeManager;
@@ -47,8 +34,6 @@ import dev.gether.getclan.core.user.User;
 import dev.gether.getclan.core.user.UserManager;
 import dev.gether.getclan.core.user.UserService;
 import dev.gether.getclan.database.MySQL;
-import dev.gether.getclan.handler.CustomInvalidUsage;
-import dev.gether.getclan.handler.PermissionMessage;
 import dev.gether.getclan.listener.AsyncPlayerChatListener;
 import dev.gether.getclan.listener.BreakBlockListener;
 import dev.gether.getclan.listener.EntityDamageListener;
@@ -60,17 +45,11 @@ import dev.gether.getclan.message.MessageService;
 import dev.gether.getclan.placeholder.ClanPlaceholder;
 import dev.gether.getclan.ranking.RankingManager;
 import dev.gether.getconfig.utils.MessageUtil;
-import dev.gether.shaded.litecommands.LiteCommands;
-import dev.gether.shaded.litecommands.argument.resolver.ArgumentResolverBase;
-import dev.gether.shaded.litecommands.bukkit.LiteBukkitFactory;
-import dev.gether.shaded.litecommands.bukkit.LiteBukkitMessages;
 import java.util.Collection;
-import java.util.Map;
 import java.util.stream.Stream;
 import lombok.Generated;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
@@ -89,7 +68,7 @@ extends JavaPlugin {
     private AllianceManager allianceManager;
     private UpgradeManager upgradeManager;
     private MySQL mySQL;
-    private LiteCommands<CommandSender> liteCommands;
+    private Object liteCommands;
     private ClanPlaceholder clanPlaceholder;
     private RankingManager rankingManager;
     private FileManager fileManager;
@@ -154,9 +133,6 @@ extends JavaPlugin {
             this.mySQL.executeQueued();
             this.mySQL.disconnect();
         }
-        if (this.liteCommands != null) {
-            this.liteCommands.unregister();
-        }
         HandlerList.unregisterAll((Plugin)this);
         Bukkit.getScheduler().cancelTasks((Plugin)this);
     }
@@ -187,7 +163,17 @@ extends JavaPlugin {
     }
 
     public void registerCmd() {
-        this.liteCommands = LiteBukkitFactory.builder("getclan").commands(this.fileManager.getConfig().getLangType() == LangType.PL ? new ClanPLCommand(this, this.fileManager, this.clanManager, this.upgradeManager) : new ClanENCommand(this, this.fileManager, this.clanManager, this.upgradeManager), this.fileManager.getConfig().getLangType() == LangType.PL ? new PlayerPLCommand(this) : new PlayerENCommand(this)).context(Owner.class, new OwnerContextual(this, this.fileManager, this.clanManager)).context(DeputyOwner.class, new DeputyOwnerContextual(this, this.fileManager, this.clanManager)).context(Member.class, new MemberContextual(this, this.fileManager, this.clanManager)).message(LiteBukkitMessages.PLAYER_NOT_FOUND, (String)MessageUtil.toLegacy(this.fileManager.getLangConfig().getMessage("player-not-found"), Map.of())).argument(Clan.class, (ArgumentResolverBase<CommandSender, Clan>)new ClanTagArgument(this.clanManager, this.fileManager)).argument(Owner.class, (ArgumentResolverBase<CommandSender, Owner>)new OwnerArgument(this.userManager, this.fileManager, this.clanManager)).argument(User.class, (ArgumentResolverBase<CommandSender, User>)new UserArgument(this.userManager, this.fileManager)).missingPermission(new PermissionMessage(this.fileManager)).invalidUsage(new CustomInvalidUsage(this.fileManager)).build();
+        GetClanCommandExecutor clanExecutor = new GetClanCommandExecutor(this, this.fileManager, this.clanManager, this.upgradeManager);
+        if (this.getCommand("getclan") != null) {
+            this.getCommand("getclan").setExecutor(clanExecutor);
+            this.getCommand("getclan").setTabCompleter(clanExecutor);
+        }
+        GetPlayerCommandExecutor playerExecutor = new GetPlayerCommandExecutor(this, this.fileManager);
+        if (this.getCommand("getplayer") != null) {
+            this.getCommand("getplayer").setExecutor(playerExecutor);
+            this.getCommand("getplayer").setTabCompleter(playerExecutor);
+        }
+        this.liteCommands = null;
     }
 
     @Generated
@@ -226,7 +212,7 @@ extends JavaPlugin {
     }
 
     @Generated
-    public LiteCommands<CommandSender> getLiteCommands() {
+    public Object getLiteCommands() {
         return this.liteCommands;
     }
 
