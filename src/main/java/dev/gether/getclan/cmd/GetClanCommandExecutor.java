@@ -14,6 +14,9 @@ import dev.gether.getclan.core.upgrade.UpgradeType;
 import dev.gether.getclan.core.user.User;
 import dev.gether.getclan.core.user.UserManager;
 import dev.gether.getconfig.utils.MessageUtil;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -725,6 +728,132 @@ public class GetClanCommandExecutor implements TabExecutor {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (args.length == 0) {
+            return List.of();
+        }
+        String prefix = args[args.length - 1].toLowerCase(Locale.ROOT);
+        if (args.length == 1) {
+            return filterOptions(baseSubcommands(sender), prefix);
+        }
+        String root = args[0].toLowerCase(Locale.ROOT);
+        if (isAny(root, "admin")) {
+            return handleAdminTabComplete(sender, args, prefix);
+        }
+        return handlePlayerTabComplete(root, args, prefix);
+    }
+
+    private List<String> handlePlayerTabComplete(String root, String[] args, String prefix) {
+        if (args.length != 2) {
+            return List.of();
+        }
+        if (isAny(root, "join", "dolacz", "info", "alliance", "sojusz")) {
+            return filterOptions(clanManager.getClansData().keySet(), prefix);
+        }
+        if (isAny(root, "invite", "zapros", "kick", "wyrzuc", "setowner", "ustawlidera", "deputy", "zastepca")) {
+            return filterOptions(playerNames(), prefix);
+        }
         return List.of();
+    }
+
+    private List<String> handleAdminTabComplete(CommandSender sender, String[] args, String prefix) {
+        if (!sender.hasPermission("getclan.admin")) {
+            return List.of();
+        }
+        if (args.length == 2) {
+            return filterOptions(adminSubcommands(), prefix);
+        }
+        String subcommand = args[1].toLowerCase(Locale.ROOT);
+        if (isAny(subcommand, "reset", "resetuj")) {
+            if (args.length == 3) {
+                return filterOptions(adminResetTargets(), prefix);
+            }
+            if (args.length == 4) {
+                return filterOptions(playerNames(), prefix);
+            }
+        }
+        if (isAny(subcommand, "delete", "usun") && args.length == 3) {
+            return filterOptions(List.of("clan", "klan"), prefix);
+        }
+        if (isAny(subcommand, "delete", "usun") && args.length == 4) {
+            return filterOptions(mergeOptions(playerNames(), clanManager.getClansData().keySet()), prefix);
+        }
+        if (isAny(subcommand, "setpoints", "ustawpunkty") && args.length == 3) {
+            return filterOptions(playerNames(), prefix);
+        }
+        if (isAny(subcommand, "set", "ustaw") && args.length == 4) {
+            return filterOptions(playerNames(), prefix);
+        }
+        if (isAny(subcommand, "upgrade", "ulepszenia") && args.length == 3) {
+            return filterOptions(List.of("enable", "disable", "on", "off"), prefix);
+        }
+        if (isAny(subcommand, "give") && args.length == 3) {
+            return filterOptions(adminGiveTypes(), prefix);
+        }
+        if (isAny(subcommand, "give") && args.length == 4) {
+            return filterOptions(playerNames(), prefix);
+        }
+        if (isAny(subcommand, "setitem") && args.length == 3) {
+            return filterOptions(adminGiveTypes(), prefix);
+        }
+        return List.of();
+    }
+
+    private List<String> baseSubcommands(CommandSender sender) {
+        List<String> subcommands = new ArrayList<>();
+        if (isPolish()) {
+            subcommands.addAll(List.of("stworz", "dolacz", "opusc", "info", "sojusz", "zapros", "wyrzuc", "ustawlidera", "zastepca",
+                "usunzastepce", "usun", "pvp", "ulepszenia"));
+        } else {
+            subcommands.addAll(List.of("create", "join", "leave", "info", "alliance", "invite", "kick", "setowner", "deputy",
+                "removedeputy", "delete", "pvp", "upgrade"));
+        }
+        if (sender.hasPermission("getclan.admin")) {
+            subcommands.addAll(List.of("admin", "reload", "setitem"));
+        }
+        return subcommands;
+    }
+
+    private List<String> adminSubcommands() {
+        if (isPolish()) {
+            return List.of("resetuj", "usun", "ustawpunkty", "ustaw", "ulepszenia", "give", "setitem");
+        }
+        return List.of("reset", "delete", "setpoints", "set", "upgrade", "give", "setitem");
+    }
+
+    private List<String> adminResetTargets() {
+        if (isPolish()) {
+            return List.of("all", "*", "zabojstwa", "smierci", "punkty");
+        }
+        return List.of("all", "*", "kills", "kill", "deaths", "death", "points");
+    }
+
+    private List<String> adminGiveTypes() {
+        List<String> types = Arrays.stream(UpgradeType.values())
+            .map(type -> type.name().toLowerCase(Locale.ROOT))
+            .toList();
+        if (isPolish()) {
+            return mergeOptions(types, List.of("odlamek"));
+        }
+        return mergeOptions(types, List.of("default"));
+    }
+
+    private List<String> playerNames() {
+        return Bukkit.getOnlinePlayers()
+            .stream()
+            .map(Player::getName)
+            .toList();
+    }
+
+    private List<String> mergeOptions(Collection<String> first, Collection<String> second) {
+        List<String> merged = new ArrayList<>(first.size() + second.size());
+        merged.addAll(first);
+        merged.addAll(second);
+        return merged;
+    }
+
+    private List<String> filterOptions(Collection<String> options, String prefix) {
+        return options.stream()
+            .filter(option -> option.toLowerCase(Locale.ROOT).startsWith(prefix))
+            .toList();
     }
 }
